@@ -1,3 +1,3 @@
       <hr>
 
-      <p class="text-center">Copyright Jacurtis - All Rights Reserved</p>
+      <p class="text-center">Copyright LaravelBlog - All Rights Reserved</p>

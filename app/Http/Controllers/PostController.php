@@ -8,7 +8,10 @@ use App\Http\Requests;
 use App\Http\Controllers\Controller;
 use App\Post;
 use App\Category;
+use App\Tag;
 use Session;
+use Purifier;
+use Image;
 
 class PostController extends Controller
 {
@@ -35,7 +38,8 @@ class PostController extends Controller
     public function create()
     {
         $categories = Category::all();
-        return view('posts.create')->withCategories($categories);
+        $tags = Tag::all();
+        return view('posts.create')->withCategories($categories)->withTags($tags);
     }
 
     /**
@@ -51,7 +55,8 @@ class PostController extends Controller
                 'title'       => 'required|max:255',
                 'slug'        => 'required|alpha_dash|min:5|max:255|unique:posts,slug',
                 'category_id' => 'required|integer',
-                'body'        => 'required'
+                'body'        => 'required',
+                'featured_img' => 'sometimes|image'
             ));
 
         // store in the database
@@ -60,9 +65,19 @@ class PostController extends Controller
         $post->title = $request->title;
         $post->slug = $request->slug;
         $post->category_id = $request->category_id;
-        $post->body = $request->body;
+        $post->body = Purifier::clean($request->body);
+
+        if ($request->hasFile('featured_img')) {
+            $image = $request->file('featured_img');
+            $filename = time().'.'. $image->getClientOriginalExtension();
+            $location = public_path('images/'.$filename);
+            Image::make($image)->resize(800, 400)->save($location);
+            $post->image = $filename;
+            }
 
         $post->save();
+
+        $post->tags()->sync($request->tags, false);
 
         Session::flash('success', 'The blog post was successfully saved!');
 
@@ -96,8 +111,14 @@ class PostController extends Controller
         foreach($categories as $category){
           $cats[$category->id] = $category->name;
         }
+
+        $tags = Tag::all();
+        $postTags = array();
+        foreach($tags as $tag){
+          $postTags[$tag->id] = $tag->name;
+        }
         // return the view and pass in the var we previously created
-        return view('posts.edit')->withPost($post)->withCategories($cats);
+        return view('posts.edit')->withPost($post)->withCategories($cats)->withTags($postTags);
     }
 
     /**
@@ -133,9 +154,14 @@ class PostController extends Controller
         $post->title = $request->input('title');
         $post->slug = $request->input('slug');
         $post->category_id = $request->input('category_id');
-        $post->body = $request->input('body');
+        $post->body = Purifier::clean($request->input('body'));
 
         $post->save();
+        if(isset($request->tags)){
+          $post->tags()->sync($request->tags);
+        }else {
+          $post->tags()->sync(array());
+        }
 
         // set flash data with success message
         Session::flash('success', 'This post was successfully saved.');
@@ -153,7 +179,7 @@ class PostController extends Controller
     public function destroy($id)
     {
         $post = Post::find($id);
-
+        $post->tags()->detach();
         $post->delete();
 
         Session::flash('success', 'The post was successfully deleted.');
