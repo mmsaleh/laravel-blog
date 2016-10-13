@@ -4,15 +4,19 @@
 
 @section('content')
 
+	
 	<div class="row">
 		<div class="col-md-8 col-md-offset-2">
+		@if($post->image)
 			<img src="{{asset('/images/' . $post->image)}}" width="800" height="400" />
+		@endif
 			<h1>{{ $post->title }}</h1>
 			<p>{!! $post->body !!}</p>
 			<hr>
-			<p>Posted In: {{ $post->category->name }}</p>
+			<p>Posted In: <span class="label label-default">{{ $post->category->name }}</span></p>
 		</div>
 	</div>
+	
 
 	<div class="row">
 		<div class="col-md-8 col-md-offset-2">

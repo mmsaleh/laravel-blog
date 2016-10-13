@@ -11,8 +11,9 @@ use Session;
 class PagesController extends Controller {
 
 	public function getIndex() {
-		$posts = Post::orderBy('created_at', 'desc')->limit(4)->get();
-		return view('pages.welcome')->withPosts($posts);
+		$posts = Post::orderBy('created_at', 'desc')->paginate(5);
+		// return view('pages.welcome')->withPosts($posts);
+		return view('front.index')->withPosts($posts);
 	}
 
 	public function getAbout() {
